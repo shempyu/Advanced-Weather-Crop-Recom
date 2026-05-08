@@ -4,10 +4,10 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 
 # Load FAISS index
-index = faiss.read_index("news.index")
+index = faiss.read_index("newss.index")
 
 # Load dataframe
-with open("news.pkl", "rb") as f:
+with open("newss.pkl", "rb") as f:
     df = pickle.load(f)
 
 # Load embedding model
