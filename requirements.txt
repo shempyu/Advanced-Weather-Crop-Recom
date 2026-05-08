@@ -5,3 +5,4 @@ sentence-transformers
 google-generativeai
 python-dotenv
 numpy
+gunicorn==22.0.0
