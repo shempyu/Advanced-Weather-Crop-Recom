@@ -1,9 +1,10 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from search_engine import search_crop_news
 from llm_formatter import format_news_response
 
 app = Flask(__name__)
-
+CORS(app)
 
 @app.route("/crop-news", methods=["POST"])
 def crop_news():

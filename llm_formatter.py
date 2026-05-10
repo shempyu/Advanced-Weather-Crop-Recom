@@ -32,9 +32,7 @@ You are an agricultural news assistant.
 
 User searched for crop: {crop_name}
 
-Here are related articles:
-
-{formatted_news}
+Below are highly relevant crop-related articles.
 
 Return ONLY valid JSON.
 
@@ -43,14 +41,30 @@ Format:
 {{
   "headline1": "",
   "link1": "",
+
   "headline2": "",
   "link2": "",
+
   "headline3": "",
-  "link3": ""
+  "link3": "",
+
+  "headline4": "",
+  "link4": "",
+
+  "headline5": "",
+  "link5": ""
 }}
 
-Do not add markdown.
-Do not add explanations.
+Rules:
+- Preserve original headlines
+- Preserve original links
+- Return latest relevant crop news first
+- Return only JSON
+- No markdown
+- No explanations
+
+Articles:
+{formatted_news}
 """
 
     # Gemini response
