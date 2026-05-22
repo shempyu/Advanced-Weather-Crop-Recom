@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from search_engine import search_crop_news
 from llm_formatter import format_news_response
+import os
 
 app = Flask(__name__)
 CORS(app)
