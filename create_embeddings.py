@@ -1,15 +1,13 @@
 import pandas as pd
-import faiss
 import pickle
-from sentence_transformers import SentenceTransformer
-import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 print("Loading dataset...")
 
 # Load dataset
 df = pd.read_csv("data/news.csv")
 
-# Remove null values
+# Fill null values
 df = df.fillna("")
 
 # Create searchable text
@@ -19,34 +17,26 @@ df["text"] = (
     df["Source"]
 )
 
-print("Loading embedding model...")
+print("Creating TF-IDF vectors...")
 
-# Embedding model
-model = SentenceTransformer("all-MiniLM-L6-v2")
-
-print("Creating embeddings...")
-
-# Generate embeddings
-embeddings = model.encode(
-    df["text"].tolist(),
-    convert_to_numpy=True
+# Lightweight vectorizer
+vectorizer = TfidfVectorizer(
+    stop_words="english",
+    max_features=5000
 )
 
-# Convert to float32
-embeddings = np.array(embeddings).astype("float32")
+vectors = vectorizer.fit_transform(df["text"])
 
-# Create FAISS index
-dimension = embeddings.shape[1]
+# Save vectorizer
+with open("tfidf_vectorizer.pkl", "wb") as f:
+    pickle.dump(vectorizer, f)
 
-index = faiss.IndexFlatL2(dimension)
-
-index.add(embeddings)
-
-# Save index
-faiss.write_index(index, "news.index")
+# Save vectors
+with open("tfidf_vectors.pkl", "wb") as f:
+    pickle.dump(vectors, f)
 
 # Save dataframe
 with open("news.pkl", "wb") as f:
     pickle.dump(df, f)
 
-print("Embeddings created successfully!")
+print("TF-IDF model created successfully!")

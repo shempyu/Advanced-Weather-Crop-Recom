@@ -1,15 +1,18 @@
-import faiss
 import pickle
-import numpy as np
 import pandas as pd
-from sentence_transformers import SentenceTransformer
-
-# Load FAISS index
-index = faiss.read_index("news.index")
+from sklearn.metrics.pairwise import cosine_similarity
 
 # Load dataframe
 with open("news.pkl", "rb") as f:
     df = pickle.load(f)
+
+# Load TF-IDF vectorizer
+with open("tfidf_vectorizer.pkl", "rb") as f:
+    vectorizer = pickle.load(f)
+
+# Load vectors
+with open("tfidf_vectors.pkl", "rb") as f:
+    vectors = pickle.load(f)
 
 # Convert Date column
 df["Date"] = pd.to_datetime(
@@ -17,9 +20,6 @@ df["Date"] = pd.to_datetime(
     format="%d-%m-%Y",
     errors="coerce"
 )
-
-# Load embedding model
-model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
 def calculate_crop_score(text, crop_name):
@@ -32,7 +32,6 @@ def calculate_crop_score(text, crop_name):
     # Strong crop match
     score += text.count(crop) * 15
 
-    # Agriculture-related keywords
     agriculture_words = [
         "farming",
         "cultivation",
@@ -41,16 +40,10 @@ def calculate_crop_score(text, crop_name):
         "yield",
         "farmer",
         "agriculture",
-        "seed",
-        "soil",
-        "irrigation",
         "production",
-        "disease",
-        "fertilizer",
-        "pesticide",
-        "msp",
         "market",
-        "export"
+        "export",
+        "disease"
     ]
 
     for word in agriculture_words:
@@ -61,33 +54,26 @@ def calculate_crop_score(text, crop_name):
 
 def search_crop_news(crop_name, top_k=30):
 
-    # Better semantic query
     query = f"""
-    {crop_name} farming cultivation agriculture
-    {crop_name} crop production harvest
-    {crop_name} farmer market export news
+    {crop_name} farming agriculture
+    {crop_name} crop production
     """
 
-    # Generate embedding
-    query_embedding = model.encode(
-        [query],
-        convert_to_numpy=True
-    )
+    # Transform query
+    query_vector = vectorizer.transform([query])
 
-    query_embedding = np.array(
-        query_embedding
-    ).astype("float32")
+    # Cosine similarity
+    similarities = cosine_similarity(
+        query_vector,
+        vectors
+    ).flatten()
 
-    # FAISS search
-    distances, indices = index.search(
-        query_embedding,
-        top_k
-    )
+    # Top indices
+    top_indices = similarities.argsort()[-top_k:][::-1]
 
     results = []
 
-    # Process search results
-    for idx in indices[0]:
+    for idx in top_indices:
 
         row = df.iloc[idx]
 
@@ -110,20 +96,17 @@ def search_crop_news(crop_name, top_k=30):
             "score": crop_score
         })
 
-    # STEP 1:
-    # Sort by relevance score
+    # Sort by relevance
     results = sorted(
         results,
         key=lambda x: x["score"],
         reverse=True
     )
 
-    # STEP 2:
-    # Keep top 5 relevant results
+    # Keep top 5 relevant
     top_results = results[:5]
 
-    # STEP 3:
-    # Sort ONLY final selected results by latest date
+    # Sort final selected results by date
     final_results = sorted(
         top_results,
         key=lambda x: x["date"]
